@@ -21,3 +21,5 @@ COPY --from=devbuilder /usr/local/bin/hadolint /usr/local/bin/hadolint
 WORKDIR /workspaces/certbot-cloudflare-esxi-docker
 
 FROM base
+COPY entrypoint.sh /
+CMD [ "/entrypoint.sh" ]
