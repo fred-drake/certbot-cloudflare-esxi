@@ -1,0 +1,5 @@
+{
+    "yaml.validate": true,
+    "yaml.schemaStore.enable": true,
+    "terminal.integrated.fontFamily": "monospace",
+  }
