@@ -1,4 +1,4 @@
-#!/bin/bash -w
+#!/bin/bash
 
 if [ -z "$CF_TOKEN" ]; then
     echo "CF_TOKEN environment variable not set!"
