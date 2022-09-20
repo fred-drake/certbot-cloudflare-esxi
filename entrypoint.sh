@@ -18,23 +18,23 @@ if [ -z "$SSHTARGET" ]; then
     exit 1;
 fi
 
-if [ ! -f "/etc/ssh_id" ]; then
-    echo "/etc/ssh_id file does not exist.  Please mount your SSH private key."
+if [ ! -f "/opt/identity/ssh_id" ]; then
+    echo "/opt/identity/ssh_id file does not exist.  Please mount your SSH private key."
     exit 1;
 fi
 
-if [ ! $(stat -L -c "%a" /etc/ssh_id) = "600" ]; then
-    echo "/etc/ssh_id must have '600' permissions."
+if [ ! $(stat -L -c "%a" /opt/identity/ssh_id) = "600" ]; then
+    echo "/opt/identity/ssh_id must have '600' permissions."
     exit 1;
 fi
 
-if [ ! -d "/etc/esxi" ]; then
-    echo "** WARNING: No /etc/esxi directory.  This is ok but backup certificates will not be preserved."
-    mkdir -p /etc/esxi
+if [ ! -d "/opt/esxi" ]; then
+    echo "** WARNING: No /opt/esxi directory.  This is ok but backup certificates will not be preserved."
+    mkdir -p /opt/esxi
 fi
 
-echo "dns_cloudflare_api_token = \"$CF_TOKEN\"" > /etc/cf_token
-chmod 400 /etc/cf_token
+echo "dns_cloudflare_api_token = \"$CF_TOKEN\"" > /opt/cf_token
+chmod 400 /opt/cf_token
 SERVER_URL="https://acme-v02.api.letsencrypt.org/directory"
 if [ ! -z "$STAGING" ]; then
     echo "** Using Lets Encrypt Staging server **"
@@ -46,20 +46,20 @@ while [ -z "$ONCE" ]; do
         OLDMD5=($(md5sum /etc/letsencrypt/live/$DOMAIN/fullchain.pem))
         echo "Renewing certificate on $DOMAIN"
         certbot renew --non-interactive --no-self-upgrade --dns-cloudflare \
-            --dns-cloudflare-credentials /etc/cf_token --agree-tos --email $EMAIL --server $SERVER_URL
+            --dns-cloudflare-credentials /opt/cf_token --agree-tos --email $EMAIL --server $SERVER_URL
         NEWMD5=($(md5sum /etc/letsencrypt/live/$DOMAIN/fullchain.pem))
         [ "$OLDMD5" != "$NEWMD5" ] && UPDATE_SYSTEM=1
     else
         echo "Creating certificate on $DOMAIN"
         certbot certonly --non-interactive --dns-cloudflare \
-            --dns-cloudflare-credentials /etc/cf_token --agree-tos --email $EMAIL -d $DOMAIN --server $SERVER_URL
+            --dns-cloudflare-credentials /opt/cf_token --agree-tos --email $EMAIL -d $DOMAIN --server $SERVER_URL
         UPDATE_SYSTEM=1
     fi
 
     if [ ! -z "$UPDATE_SYSTEM" ]; then
         echo "Backing up current certificates..."
         D=$(date +%Y%m%d-%H%M%S)
-        OPTS="-i /etc/ssh_id -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+        OPTS="-i /opt/identity/ssh_id -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
         scp $OPTS $SSHTARGET:/etc/vmware/ssl/rui.crt /etc/esxi/rui.crt.$D
         scp $OPTS $SSHTARGET:/etc/vmware/ssl/rui.key /etc/esxi/rui.key.$D
 
