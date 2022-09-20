@@ -1,5 +1,8 @@
 #!/bin/bash
 
+trap "echo SIGINT; exit" SIGINT
+trap "echo SIGTERM; exit" SIGTERM
+
 if [ -z "$CF_TOKEN" ]; then
     echo "CF_TOKEN environment variable not set!"
     exit 1;
