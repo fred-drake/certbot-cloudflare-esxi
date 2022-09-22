@@ -61,7 +61,7 @@ while [ -z "$ONCE" ]; do
         UPDATE_SYSTEM=1
     fi
 
-    if [ ! -z "$UPDATE_SYSTEM" ]; then
+    if [ ! -z "$UPDATE_SYSTEM" ] || [ ! -z "$FORCE_UPDATE" ]; then
         echo "Backing up current certificates..."
         D=$(date +%Y%m%d-%H%M%S)
         OPTS="-i /opt/identity/ssh_id -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
