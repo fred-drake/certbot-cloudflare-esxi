@@ -3,6 +3,21 @@
 trap "echo SIGINT; exit" SIGINT
 trap "echo SIGTERM; exit" SIGTERM
 
+remote_command () {
+    RETRIES=0
+    MAX_RETRIES=5
+    OPTS="-i /opt/identity/ssh_id -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+    COMMAND=$1; shift
+    while [ "$RETRIES" -lt "$MAX_RETRIES" ]; do
+        echo "Running: $COMMAND $OPTS $@"
+        if [ $($COMMAND $OPTS $@) ]; then
+            return
+        else
+            RETRIES=$((RETRIES+1))
+        fi
+    done
+}
+
 if [ -z "$CF_TOKEN" ]; then
     echo "CF_TOKEN environment variable not set!"
     exit 1;
@@ -64,15 +79,16 @@ while [ -z "$ONCE" ]; do
     if [ ! -z "$UPDATE_SYSTEM" ] || [ ! -z "$FORCE_UPDATE" ]; then
         echo "Backing up current certificates..."
         D=$(date +%Y%m%d-%H%M%S)
-        OPTS="-i /opt/identity/ssh_id -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
-        scp $OPTS $SSHTARGET:/etc/vmware/ssl/rui.crt /etc/esxi/rui.crt.$D
-        scp $OPTS $SSHTARGET:/etc/vmware/ssl/rui.key /etc/esxi/rui.key.$D
+        
+        remote_command scp $SSHTARGET:/etc/vmware/ssl/rui.crt /etc/esxi/rui.crt.$D
+        remote_command scp $SSHTARGET:/etc/vmware/ssl/rui.key /etc/esxi/rui.key.$D
 
         echo "Updating system with new certificate."
-        scp $OPTS /etc/letsencrypt/live/$DOMAIN/fullchain.pem $SSHTARGET:/etc/vmware/ssl/rui.crt
-        scp $OPTS /etc/letsencrypt/live/$DOMAIN/privkey.pem $SSHTARGET:/etc/vmware/ssl/rui.key
+        remote_command scp /etc/letsencrypt/live/$DOMAIN/fullchain.pem $SSHTARGET:/etc/vmware/ssl/rui.crt
+        remote_command scp /etc/letsencrypt/live/$DOMAIN/privkey.pem $SSHTARGET:/etc/vmware/ssl/rui.key
         echo "Rebooting.  If web doesn't come back, reset with /sbin/generate-certificates && reboot"
-        ssh $OPTS $SSHTARGET reboot
+
+        remote_command ssh $SSHTARGET reboot
     fi
 
     if [ -z "$ONCE"]; then
